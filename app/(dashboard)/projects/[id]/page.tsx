@@ -139,10 +139,14 @@ export default function ProjectDetailPage({
         }
     };
 
+    const refreshAll = async () => {
+        await Promise.all([fetchStats(), fetchEvents()]);
+    };
+
     const copyScript = () => {
         if (!project) return;
 
-        const script = `<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/tracker.js" data-api-key="${project.apiKey}"></script>`;
+        const script = `<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/script" data-api-key="${project.apiKey}"></script>`;
         navigator.clipboard.writeText(script);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -241,8 +245,8 @@ export default function ProjectDetailPage({
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-semibold text-[#e4e4e7]">{project.name}</h1>
                             <div className={`px-2 py-0.5 rounded text-xs font-medium ${project.isActive
-                                    ? "bg-[#1a3a2a] text-[#6fcf97] border border-[#2a4a3a]"
-                                    : "bg-[#3d2020] text-[#f87171] border border-[#5c3030]"
+                                ? "bg-[#1a3a2a] text-[#6fcf97] border border-[#2a4a3a]"
+                                : "bg-[#3d2020] text-[#f87171] border border-[#5c3030]"
                                 }`}>
                                 {project.isActive ? "Active" : "Paused"}
                             </div>
@@ -290,7 +294,7 @@ export default function ProjectDetailPage({
                         <h2 className="text-lg font-semibold text-[#e4e4e7]">Events Log</h2>
                         <p className="text-sm text-[#6b6b75]">Recent tracking events</p>
                     </div>
-                    <Button variant="secondary" size="sm" onClick={fetchEvents}>
+                    <Button variant="secondary" size="sm" onClick={refreshAll}>
                         <RefreshCw className="w-4 h-4" />
                         Refresh
                     </Button>
@@ -317,10 +321,10 @@ export default function ProjectDetailPage({
                                     <tr key={event.id} className="hover:bg-[#18181e] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${event.type === 'pageview'
-                                                    ? 'bg-[#1a3a2a] text-[#6fcf97] border border-[#2a4a3a]'
-                                                    : event.type === 'click'
-                                                        ? 'bg-[#3a2a1a] text-[#f5a623] border border-[#4a3a2a]'
-                                                        : 'bg-[#7c5eb3]/10 text-[#b39ddb] border border-[#7c5eb3]/20'
+                                                ? 'bg-[#1a3a2a] text-[#6fcf97] border border-[#2a4a3a]'
+                                                : event.type === 'click'
+                                                    ? 'bg-[#3a2a1a] text-[#f5a623] border border-[#4a3a2a]'
+                                                    : 'bg-[#7c5eb3]/10 text-[#b39ddb] border border-[#7c5eb3]/20'
                                                 }`}>
                                                 {event.type}
                                             </span>
@@ -366,7 +370,7 @@ export default function ProjectDetailPage({
                 <div className="p-6">
                     <div className="relative">
                         <pre className="bg-[#0c0c10] border border-[#1e1e24] rounded-lg p-4 overflow-x-auto text-sm text-[#e4e4e7] font-mono">
-                            {`<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/tracker.js" 
+                            {`<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/script" 
   data-api-key="${project.apiKey}">
 </script>`}
                         </pre>

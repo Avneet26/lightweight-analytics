@@ -70,39 +70,43 @@ export async function POST(request: Request) {
             sessionId: sessionId || null,
         });
 
-        // Update daily stats
-        const today = new Date().toISOString().split("T")[0];
+        // Only update daily stats for pageview events
+        const eventType = type || "pageview";
 
-        // Try to find existing stats for today + page
-        const [existingStat] = await db
-            .select()
-            .from(dailyStats)
-            .where(
-                and(
-                    eq(dailyStats.projectId, project.id),
-                    eq(dailyStats.date, today),
-                    eq(dailyStats.page, page || "/")
+        if (eventType === "pageview") {
+            const today = new Date().toISOString().split("T")[0];
+
+            // Try to find existing stats for today + page
+            const [existingStat] = await db
+                .select()
+                .from(dailyStats)
+                .where(
+                    and(
+                        eq(dailyStats.projectId, project.id),
+                        eq(dailyStats.date, today),
+                        eq(dailyStats.page, page || "/")
+                    )
                 )
-            )
-            .limit(1);
+                .limit(1);
 
-        if (existingStat) {
-            // Update existing stats
-            await db
-                .update(dailyStats)
-                .set({
-                    pageviews: sql`${dailyStats.pageviews} + 1`,
-                })
-                .where(eq(dailyStats.id, existingStat.id));
-        } else {
-            // Create new daily stat (id is auto-increment, don't include it)
-            await db.insert(dailyStats).values({
-                projectId: project.id,
-                date: today,
-                page: page || "/",
-                pageviews: 1,
-                uniqueVisitors: 1,
-            });
+            if (existingStat) {
+                // Update existing stats
+                await db
+                    .update(dailyStats)
+                    .set({
+                        pageviews: sql`${dailyStats.pageviews} + 1`,
+                    })
+                    .where(eq(dailyStats.id, existingStat.id));
+            } else {
+                // Create new daily stat (id is auto-increment, don't include it)
+                await db.insert(dailyStats).values({
+                    projectId: project.id,
+                    date: today,
+                    page: page || "/",
+                    pageviews: 1,
+                    uniqueVisitors: 1,
+                });
+            }
         }
 
         return NextResponse.json(
