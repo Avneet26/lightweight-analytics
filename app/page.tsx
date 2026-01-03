@@ -29,6 +29,9 @@ export default function HomePage() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link href="/docs">
+              <Button variant="ghost" size="sm">Docs</Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost" size="sm">Sign in</Button>
             </Link>
@@ -199,17 +202,40 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="border-t border-[#1e1e24] py-8 px-6 relative z-10 bg-[#0c0c10]">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#7c5eb3] to-[#9b7ed9] flex items-center justify-center">
-              <BarChart3 className="w-3 h-3 text-white" />
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#7c5eb3] to-[#9b7ed9] flex items-center justify-center">
+                <BarChart3 className="w-3 h-3 text-white" />
+              </div>
+              <span className="text-xs text-[#4a4a54]">
+                Lightweight Analytics © {new Date().getFullYear()}
+              </span>
             </div>
-            <span className="text-xs text-[#4a4a54]">
-              Lightweight Analytics © 2024
-            </span>
-          </div>
-          <div className="text-xs text-[#4a4a54]">
-            Built with ♥ for developers
+            <div className="flex items-center gap-6">
+              <Link href="/docs" className="text-xs text-[#6b6b75] hover:text-[#e4e4e7] transition-colors">
+                Documentation
+              </Link>
+              <a
+                href="https://github.com/Avneet26/lightweight-analytics"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#6b6b75] hover:text-[#e4e4e7] transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
+            <div className="text-xs text-[#6b6b75]">
+              Made with <span className="text-[#f87171]">♥</span> by{" "}
+              <a
+                href="https://github.com/Avneet26"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#b39ddb] hover:text-[#e4e4e7] transition-colors"
+              >
+                Avneet Virdi
+              </a>
+            </div>
           </div>
         </div>
       </footer>

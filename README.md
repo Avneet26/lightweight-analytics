@@ -4,6 +4,9 @@
 
 Stop using bloated analytics tools that slow down your website and invade user privacy. Lightweight Analytics gives you the insights you need — nothing more, nothing less.
 
+[![Live Demo](https://img.shields.io/badge/Live-Demo-7c5eb3?style=for-the-badge)](https://lightweight-analytics.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?style=for-the-badge&logo=github)](https://github.com/Avneet26/lightweight-analytics)
+
 ---
 
 ## ✨ Why Lightweight Analytics?
@@ -23,7 +26,7 @@ Stop using bloated analytics tools that slow down your website and invade user p
 
 ### 1. Create Your Account
 
-Sign up at [your-analytics-domain.com](https://your-analytics-domain.com) with just an email and password. No credit card required.
+Sign up at [lightweight-analytics.vercel.app](https://lightweight-analytics.vercel.app/register) with just an email and password.
 
 ### 2. Add Your Website
 
@@ -34,7 +37,7 @@ Click **"New Project"** and enter your website's name and domain. You'll receive
 Copy your personalized script and paste it into your website's `<head>` tag:
 
 ```html
-<script defer src="https://your-analytics-domain.com/tracker.js" 
+<script defer src="https://lightweight-analytics.vercel.app/api/script" 
   data-api-key="la_yourUniqueApiKey">
 </script>
 ```
@@ -48,14 +51,13 @@ Copy your personalized script and paste it into your website's `<head>` tag:
 ### Automatic Tracking
 - **Page Views** — Every page visit is captured
 - **Unique Visitors** — Session-based visitor counting
-- **Referrers** — Where your traffic comes from
-- **Devices** — Desktop, mobile, or tablet
-- **Browsers** — Chrome, Firefox, Safari, and more
-- **Countries** — Geographic distribution of visitors
+- **Referrers** — See where your traffic comes from
+- **Device Info** — Desktop, mobile, or tablet
+- **Browser Info** — Chrome, Firefox, Safari, etc.
 
 ### Custom Event Tracking
 
-Track specific user actions with a simple JavaScript call:
+Track any interaction with a simple API:
 
 ```javascript
 // Track button clicks
@@ -84,90 +86,73 @@ See every event in a detailed table with:
 - Event type (pageview, click, custom)
 - Page URL
 - Device & browser info
-- Country
 - Timestamp
 
 ### Key Metrics
-- **Total Page Views** — Cumulative page visits
-- **Unique Visitors** — Distinct user sessions
-- **Event Count** — All tracked interactions
-- **Top Pages** — Your most visited content
+- Total page views
+- Unique visitors
+- Top pages
+- Event breakdown
 
 ---
 
-## � Privacy by Design
+## 🔌 REST API
 
-We believe analytics shouldn't come at the cost of user privacy:
-
-- **No Cookies** — We don't set any cookies
-- **No Personal Data** — We never collect names, emails, or IPs
-- **No Cross-Site Tracking** — Each site's data is isolated
-- **No Data Selling** — Your data is yours, period
-- **GDPR Compliant** — No consent banners needed
-
----
-
-## ⚡ Performance First
-
-Our tracking script is designed for speed:
-
-- **< 1KB** — Smaller than most images
-- **Async Loading** — Never blocks page rendering
-- **Edge Deployment** — Served from the nearest location
-- **No Dependencies** — Pure vanilla JavaScript
-
----
-
-## 🔑 API Access
-
-Need programmatic access? Use our REST API:
-
-### Track an Event
+Send events directly via our API:
 
 ```bash
-curl -X POST https://your-analytics-domain.com/api/track \
+curl -X POST https://lightweight-analytics.vercel.app/api/track \
   -H "Content-Type: application/json" \
   -d '{
     "apiKey": "la_yourApiKey",
     "type": "pageview",
-    "page": "/pricing"
+    "page": "/home"
   }'
 ```
 
-### Event Types
+### API Reference
 
-| Type | Description |
-|------|-------------|
-| `pageview` | Standard page visit |
-| `click` | User click event |
-| `submit` | Form submission |
-| `custom` | Any custom event |
-
----
-
-## 💡 SPA Support
-
-Building a Single Page Application? We've got you covered.
-
-The tracking script automatically detects route changes in:
-- React Router
-- Next.js
-- Vue Router
-- Angular Router
-- Any History API-based routing
-
-No additional configuration required.
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `apiKey` | string | ✅ | Your project's API key |
+| `type` | string | ✅ | Event type: `pageview`, `click`, or custom |
+| `page` | string | ✅ | Page URL where event occurred |
+| `name` | string | ❌ | Event name (for custom events) |
+| `referrer` | string | ❌ | Referring URL |
 
 ---
 
-## � Works Everywhere
+## 🛡️ Privacy by Design
 
-Lightweight Analytics works with any website or framework:
+Lightweight Analytics is built with privacy at its core:
 
-- ✅ Static HTML sites
-- ✅ WordPress
-- ✅ Shopify
-- ✅ React / Next.js
+- **No Cookies** — We don't set any cookies
+- **No Personal Data** — We don't collect IP addresses, names, or emails
+- **No Fingerprinting** — We don't use browser fingerprinting
+- **GDPR Compliant** — No consent banner needed
+- **Your Data** — You own your data, always
+
+---
+
+## 📦 Tech Stack
+
+Built with modern technologies:
+
+- **Next.js 15** — React framework with App Router
+- **TypeScript** — Type-safe development
+- **Turso (libSQL)** — Edge-deployed SQLite database
+- **Drizzle ORM** — Type-safe database queries
+- **NextAuth.js** — Authentication
+- **Tailwind CSS** — Styling
+- **Vercel** — Deployment & Edge Network
+
+---
+
+## 🌐 Framework Support
+
+Works with any website or framework:
+
+- ✅ Next.js / React
 - ✅ Vue / Nuxt
 - ✅ Angular
 - ✅ Svelte / SvelteKit
@@ -186,47 +171,45 @@ No! Since we don't use cookies or collect personal data, you don't need consent 
 <details>
 <summary><strong>Will this slow down my website?</strong></summary>
 
-No. Our script is under 1KB and loads asynchronously. It has no measurable impact on page load times.
-</details>
-
-<details>
-<summary><strong>How do you detect unique visitors without cookies?</strong></summary>
-
-We use session-based identification that resets when the browser is closed. This provides useful metrics while respecting privacy.
+No. Our tracking script is less than 1KB and loads asynchronously. It has virtually no impact on page performance.
 </details>
 
 <details>
 <summary><strong>Can I export my data?</strong></summary>
 
-Yes! You can export your analytics data in CSV or JSON format from the dashboard.
+Yes! You can access all your data via our REST API and export it in JSON format.
 </details>
 
 <details>
-<summary><strong>Is my data secure?</strong></summary>
+<summary><strong>How long is data retained?</strong></summary>
 
-Absolutely. All data is encrypted in transit and at rest. We use edge databases for security and performance.
+Your data is retained indefinitely. You can delete it anytime from your dashboard.
 </details>
 
 ---
 
-## � Support
+## 📄 License
 
-Need help? We're here for you:
+MIT License — feel free to use this project for anything.
 
-- 📧 **Email**: support@your-analytics-domain.com
-- 📖 **Docs**: [docs.your-analytics-domain.com](https://docs.your-analytics-domain.com)
-- 💬 **Discord**: [Join our community](https://discord.gg/your-invite)
+---
+
+## 🔗 Links
+
+- **Live Demo**: [lightweight-analytics.vercel.app](https://lightweight-analytics.vercel.app)
+- **GitHub**: [github.com/Avneet26/lightweight-analytics](https://github.com/Avneet26/lightweight-analytics)
+- **Documentation**: [lightweight-analytics.vercel.app/docs](https://lightweight-analytics.vercel.app/docs)
 
 ---
 
 <p align="center">
   <strong>Start tracking smarter, not harder.</strong>
   <br><br>
-  <a href="https://your-analytics-domain.com/register">Get Started Free →</a>
+  <a href="https://lightweight-analytics.vercel.app/register">Get Started Free →</a>
 </p>
 
 ---
 
 <p align="center">
-  Built with ❤️ for developers who value privacy
+  Made with ♥ by <a href="https://github.com/Avneet26">Avneet Virdi</a>
 </p>

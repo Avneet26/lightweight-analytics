@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
 export function DashboardHeader() {
@@ -11,6 +11,12 @@ export function DashboardHeader() {
                 {/* Breadcrumb or page title can go here */}
             </div>
             <div className="flex items-center gap-3">
+                <Link href="/docs" target="_blank">
+                    <Button variant="ghost" size="sm">
+                        <HelpCircle className="w-4 h-4" />
+                        Docs
+                    </Button>
+                </Link>
                 <Link href="/projects/new">
                     <Button size="sm">
                         <Plus className="w-4 h-4" />
