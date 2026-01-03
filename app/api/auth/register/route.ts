@@ -47,7 +47,6 @@ export async function POST(request: Request) {
             email: email.toLowerCase(),
             name: name || null,
             passwordHash,
-            plan: "free",
         });
 
         return NextResponse.json(

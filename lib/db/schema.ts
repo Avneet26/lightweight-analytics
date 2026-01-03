@@ -9,7 +9,6 @@ export const users = sqliteTable("users", {
     email: text("email").notNull().unique(),
     name: text("name"),
     passwordHash: text("password_hash").notNull(),
-    plan: text("plan").default("free"), // free, pro, enterprise
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });

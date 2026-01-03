@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Mail, LogOut, Shield } from "lucide-react";
+import { User, Mail, LogOut } from "lucide-react";
 
 export default function SettingsPage() {
     const { data: session } = useSession();
@@ -47,30 +47,6 @@ export default function SettingsPage() {
                     <p className="text-xs text-[#6b6b75]">
                         Profile editing coming soon
                     </p>
-                </div>
-            </div>
-
-            {/* Plan Section */}
-            <div className="bg-[#101014] border border-[#1e1e24] rounded-xl">
-                <div className="px-6 py-4 border-b border-[#1e1e24]">
-                    <h2 className="text-lg font-semibold text-[#e4e4e7]">Plan</h2>
-                    <p className="text-sm text-[#6b6b75]">Your current subscription</p>
-                </div>
-                <div className="p-6">
-                    <div className="flex items-center justify-between p-4 bg-[#7c5eb3]/10 border border-[#7c5eb3]/20 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#7c5eb3]/20 flex items-center justify-center">
-                                <Shield className="w-5 h-5 text-[#b39ddb]" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-[#e4e4e7]">Free Plan</p>
-                                <p className="text-sm text-[#6b6b75]">Up to 10,000 events/month</p>
-                            </div>
-                        </div>
-                        <Button variant="secondary" disabled>
-                            Upgrade
-                        </Button>
-                    </div>
                 </div>
             </div>
 

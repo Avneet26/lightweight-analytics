@@ -68,8 +68,8 @@ document.querySelector('form').addEventListener('submit', () => {
   window.la.track('submit', 'newsletter_form');
 });
 
-// Track purchases
-window.la.track('purchase', 'pro_plan');
+// Track custom events
+window.la.track('download', 'user_guide_pdf');
 ```
 
 ---
@@ -172,18 +172,6 @@ Lightweight Analytics works with any website or framework:
 - ✅ Angular
 - ✅ Svelte / SvelteKit
 - ✅ Any website with HTML access
-
----
-
-## 🆓 Free Tier
-
-Get started for free with generous limits:
-
-- **10,000 events/month**
-- **Unlimited projects**
-- **30-day data retention**
-- **Full dashboard access**
-- **API access**
 
 ---
 
