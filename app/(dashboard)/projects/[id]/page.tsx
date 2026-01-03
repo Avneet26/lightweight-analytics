@@ -1,25 +1,27 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, use, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
     ArrowLeft,
-    Copy,
-    Check,
-    RefreshCw,
     Trash2,
     Globe,
     Eye,
     Users,
     MousePointerClick,
     TrendingUp,
-    Clock,
-    Monitor,
-    Smartphone,
-    Tablet
+    Settings,
 } from "lucide-react";
+import {
+    FilterProvider,
+    FilterBar,
+    EventsTable,
+    useFilters,
+    type Event,
+    type FilterOptions,
+} from "@/components/analytics";
 
 interface Project {
     id: string;
@@ -37,71 +39,58 @@ interface Stats {
     topPages: { page: string; views: number }[];
 }
 
-interface Event {
-    id: number;
-    projectId: string;
-    type: string;
-    name: string | null;
-    page: string;
-    referrer: string | null;
-    country: string | null;
-    device: string | null;
-    browser: string | null;
-    sessionId: string | null;
-    createdAt: string;
+interface EventsResponse {
+    events: Event[];
+    total: number;
+    limit: number;
+    offset: number;
+    filterOptions: FilterOptions;
 }
 
-function getDeviceIcon(device: string | null) {
-    switch (device?.toLowerCase()) {
-        case "mobile":
-            return <Smartphone className="w-3 h-3" />;
-        case "tablet":
-            return <Tablet className="w-3 h-3" />;
-        default:
-            return <Monitor className="w-3 h-3" />;
-    }
-}
-
-function formatTimeAgo(dateString: string) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
-    return "just now";
-}
-
-export default function ProjectDetailPage({
-    params
-}: {
-    params: Promise<{ id: string }>
-}) {
-    const { id } = use(params);
+// Inner component that uses the filter context
+function ProjectDashboard({ projectId }: { projectId: string }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const { filters, setFilterOptions } = useFilters();
+
     const [project, setProject] = useState<Project | null>(null);
     const [stats, setStats] = useState<Stats | null>(null);
     const [events, setEvents] = useState<Event[]>([]);
+    const [eventsTotal, setEventsTotal] = useState(0);
+    const [eventsOffset, setEventsOffset] = useState(0);
+    const [eventsLimit, setEventsLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(true);
-    const [copied, setCopied] = useState(false);
+    const [isEventsLoading, setIsEventsLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    useEffect(() => {
-        fetchProject();
-        fetchStats();
-        fetchEvents();
-    }, [id]);
+    // Build query string from filters
+    const buildQueryString = useCallback(() => {
+        const params = new URLSearchParams();
 
-    const fetchProject = async () => {
+        params.set("limit", eventsLimit.toString());
+        params.set("offset", eventsOffset.toString());
+
+        if (filters.startDate) params.set("startDate", filters.startDate);
+        if (filters.endDate) params.set("endDate", filters.endDate);
+        if (filters.types.length > 0) params.set("type", filters.types.join(","));
+        if (filters.eventName) params.set("name", filters.eventName);
+        if (filters.page) params.set("page", filters.page);
+        if (filters.pageContains) params.set("pageContains", filters.pageContains);
+        if (filters.devices.length > 0) params.set("device", filters.devices.join(","));
+        if (filters.browsers.length > 0) params.set("browser", filters.browsers.join(","));
+        if (filters.countries.length > 0) params.set("country", filters.countries.join(","));
+        if (filters.sessionId) params.set("sessionId", filters.sessionId);
+        if (filters.referrer) params.set("referrer", filters.referrer);
+        if (filters.sortBy !== "createdAt") params.set("sortBy", filters.sortBy);
+        if (filters.sortOrder !== "desc") params.set("sortOrder", filters.sortOrder);
+
+        return params.toString();
+    }, [filters, eventsLimit, eventsOffset]);
+
+    const fetchProject = useCallback(async () => {
         try {
-            const response = await fetch(`/api/projects/${id}`);
+            const response = await fetch(`/api/projects/${projectId}`);
             if (response.ok) {
                 const data = await response.json();
                 setProject(data.project);
@@ -113,11 +102,11 @@ export default function ProjectDetailPage({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [projectId, router]);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
-            const response = await fetch(`/api/projects/${id}/stats`);
+            const response = await fetch(`/api/projects/${projectId}/stats`);
             if (response.ok) {
                 const data = await response.json();
                 setStats(data);
@@ -125,57 +114,53 @@ export default function ProjectDetailPage({
         } catch (error) {
             console.error("Failed to fetch stats:", error);
         }
-    };
+    }, [projectId]);
 
-    const fetchEvents = async () => {
+    const fetchEvents = useCallback(async () => {
+        setIsEventsLoading(true);
         try {
-            const response = await fetch(`/api/projects/${id}/events?limit=50`);
+            const queryString = buildQueryString();
+            const response = await fetch(`/api/projects/${projectId}/events?${queryString}`);
             if (response.ok) {
-                const data = await response.json();
+                const data: EventsResponse = await response.json();
                 setEvents(data.events);
+                setEventsTotal(data.total);
+                setFilterOptions(data.filterOptions);
             }
         } catch (error) {
             console.error("Failed to fetch events:", error);
+        } finally {
+            setIsEventsLoading(false);
         }
-    };
+    }, [projectId, buildQueryString, setFilterOptions]);
+
+    useEffect(() => {
+        fetchProject();
+        fetchStats();
+    }, [fetchProject, fetchStats]);
+
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
     const refreshAll = async () => {
         await Promise.all([fetchStats(), fetchEvents()]);
     };
 
-    const copyScript = () => {
-        if (!project) return;
-
-        const script = `<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/script" data-api-key="${project.apiKey}"></script>`;
-        navigator.clipboard.writeText(script);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    const handlePageChange = (newOffset: number) => {
+        setEventsOffset(newOffset);
     };
 
-    const regenerateApiKey = async () => {
-        if (!project) return;
-
-        try {
-            const response = await fetch(`/api/projects/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ regenerateApiKey: true }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setProject(data.project);
-            }
-        } catch (error) {
-            console.error("Failed to regenerate API key:", error);
-        }
+    const handleLimitChange = (newLimit: number) => {
+        setEventsLimit(newLimit);
+        setEventsOffset(0); // Reset to first page
     };
 
     const toggleActive = async () => {
         if (!project) return;
 
         try {
-            const response = await fetch(`/api/projects/${id}`, {
+            const response = await fetch(`/api/projects/${projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ isActive: !project.isActive }),
@@ -195,7 +180,7 @@ export default function ProjectDetailPage({
         setIsDeleting(true);
 
         try {
-            const response = await fetch(`/api/projects/${id}`, {
+            const response = await fetch(`/api/projects/${projectId}`, {
                 method: "DELETE",
             });
 
@@ -220,7 +205,10 @@ export default function ProjectDetailPage({
                     Back to Projects
                 </Link>
                 <div className="bg-[#101014] border border-[#1e1e24] rounded-xl p-8 flex items-center justify-center">
-                    <div className="text-[#6b6b75]">Loading...</div>
+                    <div className="flex items-center gap-3 text-[#6b6b75]">
+                        <div className="w-5 h-5 border-2 border-[#7c5eb3] border-t-transparent rounded-full animate-spin" />
+                        <span>Loading...</span>
+                    </div>
                 </div>
             </div>
         );
@@ -231,7 +219,7 @@ export default function ProjectDetailPage({
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -258,6 +246,12 @@ export default function ProjectDetailPage({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Link href={`/projects/${projectId}/settings`}>
+                        <Button variant="secondary">
+                            <Settings className="w-4 h-4" />
+                            Settings
+                        </Button>
+                    </Link>
                     <Button variant="secondary" onClick={toggleActive}>
                         {project.isActive ? "Pause" : "Activate"}
                     </Button>
@@ -287,127 +281,21 @@ export default function ProjectDetailPage({
                 ))}
             </div>
 
-            {/* Events Log Table */}
-            <div className="bg-[#101014] border border-[#1e1e24] rounded-xl">
-                <div className="px-6 py-4 border-b border-[#1e1e24] flex items-center justify-between">
-                    <div>
-                        <h2 className="text-lg font-semibold text-[#e4e4e7]">Events Log</h2>
-                        <p className="text-sm text-[#6b6b75]">Recent tracking events</p>
-                    </div>
-                    <Button variant="secondary" size="sm" onClick={refreshAll}>
-                        <RefreshCw className="w-4 h-4" />
-                        Refresh
-                    </Button>
-                </div>
-                <div className="overflow-x-auto">
-                    {events.length === 0 ? (
-                        <div className="p-8 text-center text-[#6b6b75]">
-                            No events recorded yet. Add the tracking script to your website to start collecting data.
-                        </div>
-                    ) : (
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-[#1e1e24]">
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Page</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Device</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Browser</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Country</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-[#6b6b75] uppercase tracking-wider">Time</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#1e1e24]">
-                                {events.map((event) => (
-                                    <tr key={event.id} className="hover:bg-[#18181e] transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${event.type === 'pageview'
-                                                ? 'bg-[#1a3a2a] text-[#6fcf97] border border-[#2a4a3a]'
-                                                : event.type === 'click'
-                                                    ? 'bg-[#3a2a1a] text-[#f5a623] border border-[#4a3a2a]'
-                                                    : 'bg-[#7c5eb3]/10 text-[#b39ddb] border border-[#7c5eb3]/20'
-                                                }`}>
-                                                {event.type}
-                                            </span>
-                                            {event.name && (
-                                                <span className="ml-2 text-xs text-[#8a8a94]">{event.name}</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-[#e4e4e7] font-mono">{event.page}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center gap-1.5 text-sm text-[#8a8a94]">
-                                                {getDeviceIcon(event.device)}
-                                                {event.device || "Unknown"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8a8a94]">
-                                            {event.browser || "Unknown"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8a8a94]">
-                                            {event.country || "Unknown"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-[#6b6b75]">
-                                                <Clock className="w-3 h-3" />
-                                                {formatTimeAgo(event.createdAt)}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            </div>
+            {/* Filter Bar */}
+            <FilterBar onRefresh={refreshAll} isLoading={isEventsLoading} />
 
-            {/* Tracking Script */}
-            <div className="bg-[#101014] border border-[#1e1e24] rounded-xl">
-                <div className="px-6 py-4 border-b border-[#1e1e24]">
-                    <h2 className="text-lg font-semibold text-[#e4e4e7]">Tracking Script</h2>
-                    <p className="text-sm text-[#6b6b75]">Add this script to your website&apos;s &lt;head&gt; tag</p>
-                </div>
-                <div className="p-6">
-                    <div className="relative">
-                        <pre className="bg-[#0c0c10] border border-[#1e1e24] rounded-lg p-4 overflow-x-auto text-sm text-[#e4e4e7] font-mono">
-                            {`<script defer src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/script" 
-  data-api-key="${project.apiKey}">
-</script>`}
-                        </pre>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="absolute top-3 right-3"
-                            onClick={copyScript}
-                        >
-                            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            {copied ? "Copied!" : "Copy"}
-                        </Button>
-                    </div>
-                </div>
-            </div>
+            {/* Events Table */}
+            <EventsTable
+                events={events}
+                isLoading={isEventsLoading}
+                total={eventsTotal}
+                limit={eventsLimit}
+                offset={eventsOffset}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+            />
 
-            {/* API Key */}
-            <div className="bg-[#101014] border border-[#1e1e24] rounded-xl">
-                <div className="px-6 py-4 border-b border-[#1e1e24]">
-                    <h2 className="text-lg font-semibold text-[#e4e4e7]">API Key</h2>
-                    <p className="text-sm text-[#6b6b75]">Use this key for manual API integration</p>
-                </div>
-                <div className="p-6">
-                    <div className="flex items-center gap-3">
-                        <code className="flex-1 bg-[#0c0c10] border border-[#1e1e24] rounded-lg px-4 py-3 text-sm text-[#e4e4e7] font-mono">
-                            {project.apiKey}
-                        </code>
-                        <Button variant="secondary" onClick={regenerateApiKey}>
-                            <RefreshCw className="w-4 h-4" />
-                            Regenerate
-                        </Button>
-                    </div>
-                    <p className="text-xs text-[#6b6b75] mt-3">
-                        ⚠️ Regenerating the API key will invalidate the current key immediately
-                    </p>
-                </div>
-            </div>
+
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
@@ -433,5 +321,31 @@ export default function ProjectDetailPage({
                 </div>
             )}
         </div>
+    );
+}
+
+// Main page component with FilterProvider wrapper
+export default function ProjectDetailPage({
+    params
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = use(params);
+
+    return (
+        <FilterProvider>
+            <Suspense fallback={
+                <div className="space-y-8">
+                    <div className="bg-[#101014] border border-[#1e1e24] rounded-xl p-8 flex items-center justify-center">
+                        <div className="flex items-center gap-3 text-[#6b6b75]">
+                            <div className="w-5 h-5 border-2 border-[#7c5eb3] border-t-transparent rounded-full animate-spin" />
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            }>
+                <ProjectDashboard projectId={id} />
+            </Suspense>
+        </FilterProvider>
     );
 }
