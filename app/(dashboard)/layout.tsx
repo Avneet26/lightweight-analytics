@@ -1,6 +1,8 @@
 import { SessionProvider } from "next-auth/react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { SidebarProvider } from "@/components/dashboard/sidebar-context";
+import { DashboardContent } from "@/components/dashboard/dashboard-content";
 
 export default function DashboardLayout({
     children,
@@ -9,15 +11,17 @@ export default function DashboardLayout({
 }) {
     return (
         <SessionProvider>
-            <div className="flex min-h-screen bg-[#0c0c10]">
-                <Sidebar />
-                <div className="flex-1 ml-60 min-h-screen flex flex-col">
-                    <DashboardHeader />
-                    <main className="flex-1 p-8">
-                        {children}
-                    </main>
+            <SidebarProvider>
+                <div className="flex min-h-screen bg-[#0c0c10]">
+                    <Sidebar />
+                    <DashboardContent>
+                        <DashboardHeader />
+                        <main className="flex-1 p-4 md:p-6 lg:p-8">
+                            {children}
+                        </main>
+                    </DashboardContent>
                 </div>
-            </div>
+            </SidebarProvider>
         </SessionProvider>
     );
 }

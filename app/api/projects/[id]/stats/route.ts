@@ -173,10 +173,70 @@ export async function GET(request: Request, context: RouteContext) {
             .orderBy(desc(sql`COUNT(*)`))
             .limit(10);
 
+        // Calculate previous period for growth comparison
+        let previousStartDate: Date;
+        let previousEndDate: Date = startDate;
+        const periodDuration = now.getTime() - startDate.getTime();
+        previousStartDate = new Date(startDate.getTime() - periodDuration);
+
+        const previousStartDateStr = previousStartDate.toISOString().split("T")[0];
+        const previousEndDateStr = previousEndDate.toISOString().split("T")[0];
+
+        // Get previous period stats for comparison
+        const previousStatsResult = await db
+            .select({
+                totalPageviews: sql<number>`COALESCE(SUM(${dailyStats.pageviews}), 0)`,
+                totalVisitors: sql<number>`COALESCE(SUM(${dailyStats.uniqueVisitors}), 0)`,
+            })
+            .from(dailyStats)
+            .where(
+                and(
+                    eq(dailyStats.projectId, id),
+                    gte(dailyStats.date, previousStartDateStr),
+                    sql`${dailyStats.date} < ${previousEndDateStr}`
+                )
+            );
+
+        // Get previous period events
+        const previousEventsResult = await db
+            .select({
+                totalEvents: sql<number>`COUNT(*)`,
+            })
+            .from(events)
+            .where(
+                and(
+                    eq(events.projectId, id),
+                    gte(events.createdAt, previousStartDate),
+                    sql`${events.createdAt} < ${previousEndDate}`
+                )
+            );
+
+        // Calculate growth percentages
+        const currentPageviews = Number(statsResult[0]?.totalPageviews || 0);
+        const previousPageviews = Number(previousStatsResult[0]?.totalPageviews || 0);
+        const currentVisitors = Number(statsResult[0]?.totalVisitors || 0);
+        const previousVisitors = Number(previousStatsResult[0]?.totalVisitors || 0);
+        const currentEvents = Number(eventsResult[0]?.totalEvents || 0);
+        const previousEvents = Number(previousEventsResult[0]?.totalEvents || 0);
+
+        const calculateGrowth = (current: number, previous: number): number => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 100);
+        };
+
+        const pageviewsGrowth = calculateGrowth(currentPageviews, previousPageviews);
+        const visitorsGrowth = calculateGrowth(currentVisitors, previousVisitors);
+        const eventsGrowth = calculateGrowth(currentEvents, previousEvents);
+
         return NextResponse.json({
-            totalPageviews: Number(statsResult[0]?.totalPageviews || 0),
-            totalVisitors: Number(statsResult[0]?.totalVisitors || 0),
-            totalEvents: Number(eventsResult[0]?.totalEvents || 0),
+            totalPageviews: currentPageviews,
+            totalVisitors: currentVisitors,
+            totalEvents: currentEvents,
+            growth: {
+                pageviews: pageviewsGrowth,
+                visitors: visitorsGrowth,
+                events: eventsGrowth,
+            },
             topPages: topPagesResult.map(p => ({ page: p.page, views: Number(p.views) })),
             dailyBreakdown: dailyBreakdown.map(d => ({
                 date: d.date,

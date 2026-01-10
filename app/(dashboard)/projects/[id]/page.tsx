@@ -12,6 +12,7 @@ import {
     Users,
     MousePointerClick,
     TrendingUp,
+    TrendingDown,
     Settings,
 } from "lucide-react";
 import {
@@ -36,6 +37,11 @@ interface Stats {
     totalPageviews: number;
     totalVisitors: number;
     totalEvents: number;
+    growth: {
+        pageviews: number;
+        visitors: number;
+        events: number;
+    };
     topPages: { page: string; views: number }[];
 }
 
@@ -264,10 +270,24 @@ function ProjectDashboard({ projectId }: { projectId: string }) {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: "Page Views", value: stats?.totalPageviews || 0, icon: Eye },
-                    { label: "Unique Visitors", value: stats?.totalVisitors || 0, icon: Users },
-                    { label: "Events", value: stats?.totalEvents || 0, icon: MousePointerClick },
-                    { label: "Growth", value: "+0%", icon: TrendingUp },
+                    {
+                        label: "Page Views",
+                        value: stats?.totalPageviews || 0,
+                        growth: stats?.growth?.pageviews ?? 0,
+                        icon: Eye
+                    },
+                    {
+                        label: "Unique Visitors",
+                        value: stats?.totalVisitors || 0,
+                        growth: stats?.growth?.visitors ?? 0,
+                        icon: Users
+                    },
+                    {
+                        label: "Events",
+                        value: stats?.totalEvents || 0,
+                        growth: stats?.growth?.events ?? 0,
+                        icon: MousePointerClick
+                    },
                 ].map((stat) => (
                     <div key={stat.label} className="bg-[#101014] border border-[#1e1e24] rounded-xl p-5">
                         <div className="flex items-center gap-2 mb-2">
@@ -275,8 +295,23 @@ function ProjectDashboard({ projectId }: { projectId: string }) {
                             <span className="text-xs text-[#6b6b75]">{stat.label}</span>
                         </div>
                         <p className="text-2xl font-semibold text-[#e4e4e7]">
-                            {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                            {stat.value.toLocaleString()}
                         </p>
+                        <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${stat.growth > 0
+                            ? 'text-[#6fcf97]'
+                            : stat.growth < 0
+                                ? 'text-[#f87171]'
+                                : 'text-[#6b6b75]'
+                            }`}>
+                            {stat.growth > 0 ? (
+                                <TrendingUp className="w-3 h-3" />
+                            ) : stat.growth < 0 ? (
+                                <TrendingDown className="w-3 h-3" />
+                            ) : null}
+                            <span>
+                                {stat.growth > 0 ? '+' : ''}{stat.growth}% vs previous period
+                            </span>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -294,8 +329,6 @@ function ProjectDashboard({ projectId }: { projectId: string }) {
                 onPageChange={handlePageChange}
                 onLimitChange={handleLimitChange}
             />
-
-
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
@@ -319,8 +352,9 @@ function ProjectDashboard({ projectId }: { projectId: string }) {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
 
